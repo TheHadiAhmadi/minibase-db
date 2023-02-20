@@ -6,7 +6,7 @@
 // remove => hard delete 
 
 const express = require('express')
-const { addMigration, getLatestSchema, getSchemaById, queryHandler, insertHandler, updateHandler, removeHandler, rollback } = require('./lib')
+const { addMigration, getLatestSchema, getSchemaById, queryHandler, insertHandler, getByIdHandler, updateHandler, removeHandler, rollback } = require('./lib')
 const mainRouter = express.Router()
 
 function getHandler(func) {
@@ -27,6 +27,15 @@ mainRouter.post('/', getHandler(queryHandler))
 mainRouter.post('/insert', getHandler(insertHandler))
 mainRouter.post('/update', getHandler(updateHandler))
 mainRouter.post('/remove', getHandler(removeHandler))
+
+
+const crudRouter = express.Router()
+
+crudRouter.get('/', getHandler(queryHandler))
+crudRouter.post('/', getHandler(insertHandler))
+crudRouter.put('/:id', getHandler(updateHandler))
+crudRouter.delete('/:id', getHandler(removeHandler))
+crudRouter.get('/:id', getHandler(getByIdHandler))
 
 const app = express()
 
