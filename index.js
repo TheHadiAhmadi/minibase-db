@@ -11,10 +11,10 @@ const mainRouter = express.Router()
 
 function getHandler(func) {
     return async (req, res) => {
-        const body = req.body 
+        const body = req.body
         const params = req.params
         const query = req.query
-        const output = await func({body, params, query})
+        const output = await func({ body, params, query })
         res.json(output)
     }
 }
@@ -41,6 +41,7 @@ const app = express()
 
 app.use(express.json())
 app.use(mainRouter)
+app.use('/:table', crudRouter);
 
 const port = process.env.PORT || 2999
 app.listen(port, () => console.log(`listening on port ${port}`))

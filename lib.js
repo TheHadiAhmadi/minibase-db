@@ -1,8 +1,5 @@
-const { default: knex } = require("knex")
 const { db } = require("./db")
 
-let migrations = []
-let logs = []
 let tables = {}
 let data = {}
 
@@ -180,15 +177,19 @@ async function addColumnMigration(command) {
 
     // return true
 }
-async function removeColumnMigration(command, tables) {
+async function removeColumnMigration(command) {
     const { table, name } = command
+    console.log('remove-column: ', { table, name })
 
     const schema = await getSchema(0)
 
-    await db.schema.alterTable(table, (builder) => {
+    const result = await db.schema.alterTable(table, (builder) => {
+        console.log(builder, name)
         builder.dropColumn(name)
+
     })
 
+    console.log(result)
     return {
         type: 'add-column',
         table,
@@ -320,6 +321,7 @@ async function getSchema(level) {
                 delete result[currentMigration.table][currentMigration.from]
             } break;
             case 'remove-table': delete result[currentMigration.name]; break;
+            case 'remove-column': delete result[currentMigration.table][currentMigration.name]; break;
             case 'rename-table': {
                 result[currentMigration.to] = result[currentMigration.from];
                 delete result[currentMigration.from]
@@ -365,86 +367,130 @@ exports.getSchemaById = function (request) {
     return getSchema(request.params.id)
 }
 
-exports.queryHandler = (request) => {
-    let { page, perPage, filters, sort } = request.query
+exports.queryHandler = async (request) => {
+    let { page, perPage, fields, filters, sort } = request.query
     const { table } = request.params
 
-    if (!tables[table]) {
-        throw new Error('table doesn\'t exists')
-    }
+    // if (!await db.schema.hasTable(table)) {
+    //     throw new Error('table doesn\'t exists')
+    // }
 
     if (!perPage) perPage = 10;
-    if (!page) page = 1;
+    if (!page || page < 1) page = 1;
     if (!filters) filters = "[]";
+    if (!fields) fields = "*";
+    if (!sort) sort = ""
 
-    const rows = data[table] ?? []
+    try {
 
+        let query = db(table).select(fields)
 
-    console.log(rows)
+        const filtersJson = JSON.parse(filters);
 
+        for (let filter of filtersJson) {
+            const [key, value, operator] = filter.split(':');
 
-    return {
-        data: rows,
-        total: rows.length,
-        perPage,
-        page
+            if (value === 'null') {
+                if (operator === '!=') {
+                    query = query.whereNotNull(key)
+                } else if ((operator ?? '=') === '=') {
+                    query = query.whereNull(key)
+                }
+            }
+            if (operator === 'like') {
+                query = query.whereLike(key, value)
+            } else if (operator === 'in') {
+                const values = value.split(',')
+                query = query.whereIn(key, values)
+            } else if (operator === 'between') {
+                const [first, last] = value.split(',')
+                query = query.whereBetween(key, [first, last])
+            } else {
+                query = query.where(key, operator ?? '=', value)
+            }
+        }
+
+        if (sort) {
+            let sortDirection = 'ASC'
+
+            if (sort.startsWith('-')) {
+                sort = sort.substring(1)
+                sortDirection = 'DESC'
+            }
+
+            query = query.orderBy(sort, sortDirection)
+        }
+
+        const offset = (page - 1) * perPage;
+        const [total, rows] = await Promise.all([
+            db.count('* as count').from(table).first(),
+            query.offset(offset).limit(perPage)
+        ])
+
+        return {
+            data: rows,
+            total: total.count,
+            perPage,
+            page
+        }
+    } catch (err) {
+        if (!await db.schema.hasTable(table))
+            return 'Table not found'
+        else
+            return err.message
     }
+
 }
 
-exports.updateHandler = function (request) {
+exports.updateHandler = async function (request) {
     const body = request.body
     const { id, table } = request.params
 
-    if (!tables[table]) {
+    if (!await db.schema.hasTable(table)) {
         throw new Error('table doesn\'t exists')
     }
 
-    delete body['id']
+    const result = await db(table).update(body).where({ id })
 
-    data[table] = data[table].map(row => {
-        if (row.id === +id) return { ...row, ...body }
-        return row
-    })
-
-    return body;
+    return true;
 }
 
 function getNextId(table) {
     const ids = data[table].map(row => row.id)
     return (ids.reduce((prev, curr) => prev > curr ? prev : curr, 0) + 1)
 }
-exports.insertHandler = function (request) {
+exports.insertHandler = async function (request) {
     const body = request.body
     const { table } = request.params
 
-    if (!tables[table]) {
+    if (!await db.schema.hasTable(table)) {
         throw new Error('table doesn\'t exists')
     }
 
-    body.id = getNextId(table)
-    data[table] = [...data[table], body]
+    const result = await db(table).insert(body).returning('*');
 
-    return body;
+    return result;
 }
 
-exports.removeHandler = function (request) {
+exports.removeHandler = async function (request) {
     const { table, id } = request.params
 
-    if (!tables[table]) {
+    if (!await db.schema.hasTable(table)) {
         throw new Error('table doesn\'t exists')
     }
 
-    data[table] = data[table].filter(row => row.id !== +id);
+    await db(table).delete().where({ id })
 
     return true;
 }
 
-exports.getByIdHandler = function (request) {
+exports.getByIdHandler = async function (request) {
     const { table, id } = request.params
+    const { fields } = request.query
 
-    if (!tables[table]) {
+    if (!await db.schema.hasTable(table)) {
         throw new Error('table doesn\'t exists')
     }
 
-    return data[table].find(row => row.id === +id) ?? null
+    return await db(table).select(fields).where({ id }).first()
 }
