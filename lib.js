@@ -429,15 +429,21 @@ exports.queryHandler = async (request) => {
 
         return {
             data: rows,
-            total: total.count,
+            total: +total.count,
             perPage,
             page
         }
     } catch (err) {
-        if (!await db.schema.hasTable(table))
+        if (!await db.schema.hasTable(table)) {
+
+            console.log(request)
             return 'Table not found'
-        else
+        }
+        else {
+            console.log(err.message)
             return err.message
+
+        }
     }
 
 }

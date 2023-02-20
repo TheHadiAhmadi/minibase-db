@@ -23,25 +23,23 @@ mainRouter.post('/migrate', getHandler(addMigration))
 mainRouter.post('/schema', getHandler(getLatestSchema))
 mainRouter.post('/schema/:id', getHandler(getSchemaById))
 mainRouter.post('/rollback/:id', getHandler(rollback))
-mainRouter.post('/', getHandler(queryHandler))
-mainRouter.post('/insert', getHandler(insertHandler))
-mainRouter.post('/update', getHandler(updateHandler))
-mainRouter.post('/remove', getHandler(removeHandler))
-
+mainRouter.get('/', (req, res) => {
+    res.send('Database server is running!')
+})
 
 const crudRouter = express.Router()
 
-crudRouter.get('/', getHandler(queryHandler))
-crudRouter.post('/', getHandler(insertHandler))
-crudRouter.put('/:id', getHandler(updateHandler))
-crudRouter.delete('/:id', getHandler(removeHandler))
-crudRouter.get('/:id', getHandler(getByIdHandler))
+crudRouter.get('/:table', getHandler(queryHandler))
+crudRouter.post('/:table', getHandler(insertHandler))
+crudRouter.put('/:table/:id', getHandler(updateHandler))
+crudRouter.delete('/:table/:id', getHandler(removeHandler))
+crudRouter.get('/:table/:id', getHandler(getByIdHandler))
 
 const app = express()
 
 app.use(express.json())
 app.use(mainRouter)
-app.use('/:table', crudRouter);
+app.use('/', crudRouter);
 
 const port = process.env.PORT || 2999
 app.listen(port, () => console.log(`listening on port ${port}`))

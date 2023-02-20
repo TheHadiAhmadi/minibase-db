@@ -2,26 +2,26 @@ const { addMigration, rollback, getLatestSchema, queryHandler, updateHandler, in
 
 async function test() {
 
-    const result = await queryHandler({
-        params: {
-            table: 'ssss'
-        },
-        query: {
-            fields: ['name', 'email'],
-            filters: '["name:tess:!="]',
-            sort: '-name',
-            perPage: 5,
-            page: 2
-        }
-    })
-
-    // const result = await getByIdHandler({
+    // const result = await queryHandler({
     //     params: {
-    //         table: 'users',
-    //         id: 12
+    //         table: 'users'
     //     },
-    //     query: {}
+    //     query: {
+    //         fields: ['name', 'email', "age"],
+    //         filters: '["age:3,18:between"]',
+    //         sort: '-name',
+    //         perPage: 5,
+    //         page: 1
+    //     }
     // })
+
+    const result = await getByIdHandler({
+        params: {
+            table: 'users',
+            id: 1
+        },
+        query: {}
+    })
 
     // const result = await insertHandler({
     //     params: {
@@ -39,10 +39,10 @@ async function test() {
     // const result = await updateHandler({
     //     params: {
     //         table: 'users',
-    //         id: 1
+    //         id: 4
     //     },
     //     body: {
-    //         name: 'testtttt'
+    //         age: 5
     //     }
     // })
 
