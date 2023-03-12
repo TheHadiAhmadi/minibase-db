@@ -253,7 +253,7 @@ const migrationHandlers = {
 async function runMigration(command) {
     if (!migrationHandlers[command.type]) {
         console.log(command)
-        throw new Error('this migration type is not valid')
+        throw new Error('this migration type is not valid: ' + command.type)
     }
 
     return await migrationHandlers[command.type](command)

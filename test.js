@@ -15,13 +15,13 @@ async function test() {
     //     }
     // })
 
-    const result = await getByIdHandler({
-        params: {
-            table: 'users',
-            id: 1
-        },
-        query: {}
-    })
+    // const result = await getByIdHandler({
+    //     params: {
+    //         table: 'users',
+    //         id: 1
+    //     },
+    //     query: {}
+    // })
 
     // const result = await insertHandler({
     //     params: {
@@ -46,26 +46,25 @@ async function test() {
     //     }
     // })
 
-    console.log(result)
-    // await addMigration({
-    //     body: {
-    //         type: 'add-table', name: 'users', columns: [
-    //             {
-    //                 name: 'id', type: 'id'
-    //             },
-    //             {
-    //                 name: 'email', type: 'string'
-    //             },
-    //             {
-    //                 name: 'name', type: 'string'
-    //             },
-    //             {
-    //                 name: 'age', type: 'number'
-    //             },
+    await addMigration({
+        body: {
+            type: 'add-table', name: 'users', columns: [
+                {
+                    name: 'id', type: 'id'
+                },
+                {
+                    name: 'email', type: 'string'
+                },
+                {
+                    name: 'name', type: 'string'
+                },
+                {
+                    name: 'age', type: 'number'
+                },
 
-    //         ]
-    //     }
-    // })
+            ]
+        }
+    })
 
     // await addMigration({
     //     body: {
